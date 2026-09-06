@@ -709,7 +709,7 @@ void BK4819_SetFilterBandwidth(const BK4819_FilterBandwidth_t Bandwidth, const b
 	    // Keep FM voice/sub-audio filters and emphasis disabled.
 	    BK4819_WriteRegister(
 	        BK4819_REG_2B,
-	        (BK4819_ReadRegister(BK4819_REG_2B) & 0xF8F8) | 0x0707
+	        (BK4819_ReadRegister(BK4819_REG_2B) & 0xF8F8) | 0x0307
 	    );
 	} else {
 		// Enable DC filter (RX & TX).
