@@ -631,7 +631,7 @@ void BK4819_SetFilterBandwidth(const BK4819_FilterBandwidth_t Bandwidth, const b
 #ifdef ENABLE_DIGITAL_MODULATION
 		case BK4819_FILTER_BW_DIGITAL_WIDE:
 			val = (4u << 12) |     // RF RX filter bandwidth (7.5kHz)
-				  (3u <<  9) |     // Weak RX signal bandwidth (6kHz)
+				  (4u <<  9) |     // Weak RX signal bandwidth (6kHz)
 				  (6u <<  6) |     // Tx AF Filter bandwidth (4.5kHz, bypassed)
 				  (2u <<  4) |     // 25kHz channel bandwidth
 				  (1u <<  3) |     // ?
@@ -700,11 +700,17 @@ void BK4819_SetFilterBandwidth(const BK4819_FilterBandwidth_t Bandwidth, const b
 	BK4819_WriteRegister(BK4819_REG_43, val);
 #ifdef ENABLE_DIGITAL_MODULATION
 	if (digitalFilters) {
-		// NOTE: AFTxLPF2 is bypassed in BK4819_PrepareDigitalTransmit()
-		// Disable DC filter (RX & TX).
-		BK4819_WriteRegister(BK4819_REG_7E, (BK4819_ReadRegister(BK4819_REG_7E) & 0xFFC0));
-		// Disable FM sub-audio filters & emphasis
-		BK4819_WriteRegister(BK4819_REG_2B, (BK4819_ReadRegister(BK4819_REG_2B) & 0xF8F8) | 0x707);
+	    // NOTE: AFTxLPF2 is bypassed in BK4819_PrepareDigitalTransmit()
+	    // Keep TX DC filter bypassed, but restore the normal RX DC filter.
+	    BK4819_WriteRegister(
+	        BK4819_REG_7E,
+	        (BK4819_ReadRegister(BK4819_REG_7E) & 0xFFC0) | 0x0006
+	    );
+	    // Keep FM voice/sub-audio filters and emphasis disabled.
+	    BK4819_WriteRegister(
+	        BK4819_REG_2B,
+	        (BK4819_ReadRegister(BK4819_REG_2B) & 0xF8F8) | 0x0707
+	    );
 	} else {
 		// Enable DC filter (RX & TX).
 		BK4819_WriteRegister(BK4819_REG_7E, (BK4819_ReadRegister(BK4819_REG_7E) & 0xFFC0) | 0b101110);
