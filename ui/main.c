@@ -18,6 +18,9 @@
 #include <stdlib.h>  // abs()
 
 #include "app/chFrScanner.h"
+#ifdef ENABLE_AIS_LAB
+#include "app/ais_lab.h"
+#endif
 #include "app/dtmf.h"
 #ifdef ENABLE_AM_FIX
 	#include "am_fix.h"
@@ -304,6 +307,13 @@ void UI_MAIN_TimeSlice500ms(void)
 
 void UI_DisplayMain(void)
 {
+#ifdef ENABLE_AIS_LAB
+	if (AISLAB_IsActive())
+	{
+		AISLAB_Display();
+		return;
+	}
+#endif
 	char               String[22];
 
 	center_line = CENTER_LINE_NONE;

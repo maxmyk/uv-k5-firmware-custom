@@ -30,6 +30,9 @@
 #include "version.h"
 
 #include "app/app.h"
+#ifdef ENABLE_AIS_LAB
+	#include "app/ais_lab.h"
+#endif
 #include "app/dtmf.h"
 #include "bsp/dp32g030/gpio.h"
 #include "bsp/dp32g030/syscon.h"
@@ -93,6 +96,9 @@ void Main(void)
 	BOARD_ADC_GetBatteryInfo(&gBatteryCurrentVoltage, &gBatteryCurrent);
 
 	SETTINGS_InitEEPROM();
+#ifdef ENABLE_AIS_LAB
+	AISLAB_Init();
+#endif
 	SETTINGS_WriteBuildOptions();
 	SETTINGS_LoadCalibration();
 

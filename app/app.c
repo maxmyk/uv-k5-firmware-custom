@@ -20,6 +20,9 @@
 
 #include "am_fix.h"
 #include "app/action.h"
+#ifdef ENABLE_AIS_LAB
+#include "app/ais_lab.h"
+#endif
 
 #ifdef ENABLE_AIRCOPY
 	#include "app/aircopy.h"
@@ -1599,6 +1602,27 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 		}
 #endif
 	}
+
+#ifdef ENABLE_AIS_LAB
+	if (AISLAB_IsActive())
+	{
+		AISLAB_ProcessKey(Key, bKeyPressed, bKeyHeld);
+		if (gBeepToPlay != BEEP_NONE)
+		{
+			AUDIO_PlayBeep(gBeepToPlay);
+			gBeepToPlay = BEEP_NONE;
+		}
+		return;
+	}
+
+	// Saved experimental register overrides are receive-only by default.
+	if (AISLAB_IsRxGuardEnabled() && Key == KEY_PTT)
+	{
+		if (!bKeyHeld && bKeyPressed)
+			AUDIO_PlayBeep(BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL);
+		return;
+	}
+#endif
 
 	bool lowBatPopup = gLowBattery && !gLowBatteryConfirmed &&  gScreenToDisplay == DISPLAY_MAIN;
 

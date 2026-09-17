@@ -17,6 +17,9 @@
 #include <string.h>
 
 #include "app/action.h"
+#ifdef ENABLE_AIS_LAB
+#include "app/ais_lab.h"
+#endif
 #include "app/app.h"
 #include "app/chFrScanner.h"
 #include "app/common.h"
@@ -84,9 +87,12 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
 
 	switch (Key) {
 		case KEY_0:
-			#ifdef ENABLE_FMRADIO
-				ACTION_FM();
-			#endif
+#ifdef ENABLE_AIS_LAB
+			AISLAB_Enter();
+			gRequestDisplayScreen = DISPLAY_MAIN;
+#elif defined(ENABLE_FMRADIO)
+			ACTION_FM();
+#endif
 			break;
 
 		case KEY_1:

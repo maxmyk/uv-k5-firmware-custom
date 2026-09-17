@@ -377,6 +377,10 @@ void SETTINGS_FactoryReset(bool bIsAll)
 {
 	uint16_t i;
 	uint8_t  Template[8];
+#ifdef ENABLE_AIS_LAB
+	const uint16_t AISLAB_EEPROM_BASE = 0x1C00u;
+	const uint16_t AISLAB_EEPROM_END  = 0x1C70u;
+#endif
 
 	memset(Template, 0xFF, sizeof(Template));
 
@@ -401,6 +405,14 @@ void SETTINGS_FactoryReset(bool bIsAll)
 			EEPROM_WriteBuffer(i, Template);
 		}
 	}
+
+#ifdef ENABLE_AIS_LAB
+	if (bIsAll)
+	{
+		for (i = AISLAB_EEPROM_BASE; i < AISLAB_EEPROM_END; i += 8)
+			EEPROM_WriteBuffer(i, Template);
+	}
+#endif
 
 	if (bIsAll)
 	{
