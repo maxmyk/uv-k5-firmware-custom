@@ -19,23 +19,27 @@ jobs:
       - name: python-pip
         run:  pacman -Syyu python-pip --noconfirm
       - name: python-crcmod
-        run:  pacman -Syyu python-crcmod --noconfirm      
+        run:  pacman -Syyu python-crcmod --noconfirm
 
       - name: Checkout
-        uses: actions/checkout@v3
-        
+        uses: actions/checkout@v4
+
       - name: safe.directory
-        run:  git config --global --add safe.directory /__w/uv-k5-firmware-custom/uv-k5-firmware-custom        
+        run:  git config --global --add safe.directory /__w/uv-k5-firmware-custom/uv-k5-firmware-custom
       - name: Make
         run:  make
+      - name: Normalize firmware permissions
+        run:  chmod 0644 firmware.bin firmware.packed.bin
+
       - name: size
         run:  arm-none-eabi-size firmware
 
-      - name: 'Upload Artifact'
+      - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
-          name: firmware
-          path: firmware*.bin
+          name: firmware-packed
+          path: firmware.packed.bin
+          if-no-files-found: error
 
       - name: Upload binaries to release
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
@@ -46,5 +50,6 @@ jobs:
           asset_name: egzumer_$tag.packed.bin
           tag: ${{ github.ref }}
           overwrite: true
-          release_name: release ${{ github.ref_name }}     
-   
+          release_name: release ${{ github.ref_name }}
+
+          
