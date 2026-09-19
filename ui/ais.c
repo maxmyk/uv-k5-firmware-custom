@@ -46,8 +46,6 @@ void UI_DisplayAIS(void) {
   UI_PrintStringSmallNormal("AIS RX", 0, 128, 6);
 #endif
 
-  UI_PrintStringSmallNormal("UP/DN CH  M AUTO", 0, 128, 7);
-
   ST7565_BlitFullScreen();
 }
 
