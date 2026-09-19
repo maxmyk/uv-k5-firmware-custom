@@ -25,7 +25,7 @@ While AIS mode is open:
 
 The last selected AIS channel and auto-switch interval are remembered in RAM until power-off. Auto switching defaults to OFF after a reboot.
 
-AIS mode temporarily turns off dual watch and cross-band, selects DIG/WIDE, keeps the receive audio open continuously, and restores the user's VFO state on exit.
+AIS mode temporarily turns off dual watch and cross-band, selects DIG/WIDE, keeps the receive audio open continuously, and restores the user's VFO and Monitor state on exit.
 
 ## Story
 

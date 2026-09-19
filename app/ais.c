@@ -44,6 +44,7 @@ static uint8_t gAisSavedTxVfo;
 static uint8_t gAisSavedDualWatch;
 static uint8_t gAisSavedCrossBand;
 static bool gAisSavedKeyLock;
+static bool gAisSavedMonitor;
 
 uint32_t AIS_GetFrequency(void) {
   return gAisFrequencies[gAisChannel % AIS_CHANNEL_COUNT];
@@ -109,6 +110,7 @@ void AIS_Start(void) {
   gAisSavedDualWatch = gEeprom.DUAL_WATCH;
   gAisSavedCrossBand = gEeprom.CROSS_BAND_RX_TX;
   gAisSavedKeyLock = gEeprom.KEY_LOCK;
+  gAisSavedMonitor = gMonitor;
 
   gAisMode = true;
 
@@ -156,13 +158,18 @@ void AIS_Stop(void) {
   gEeprom.DUAL_WATCH = gAisSavedDualWatch;
   gEeprom.CROSS_BAND_RX_TX = gAisSavedCrossBand;
   gEeprom.KEY_LOCK = gAisSavedKeyLock;
+  gMonitor = gAisSavedMonitor;
 
   RADIO_SelectVfos();
   RADIO_SetupRegisters(true);
 
   gAisAutoSwitchCountdown_500ms = 0;
   gAisMode = false;
-  GUI_SelectNextDisplay(DISPLAY_MAIN);
+
+  if (gAisSavedMonitor)
+    APP_StartListening(FUNCTION_MONITOR);
+  else
+    GUI_SelectNextDisplay(DISPLAY_MAIN);
 }
 
 void AIS_TimeSlice500ms(void) {
