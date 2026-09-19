@@ -20,8 +20,8 @@
 
 #include "am_fix.h"
 #include "app/action.h"
-#ifdef ENABLE_AIS_LAB
-#include "app/ais_lab.h"
+#ifdef ENABLE_AIS
+	#include "app/ais.h"
 #endif
 
 #ifdef ENABLE_AIRCOPY
@@ -81,6 +81,36 @@ static bool flagSaveChannel;
 
 static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld);
 
+#ifdef ENABLE_AIS
+void APP_FlushPendingSavesForAIS(void)
+{
+	if (gRequestSaveSettings || flagSaveSettings)
+		SETTINGS_SaveSettings();
+	gRequestSaveSettings = false;
+	flagSaveSettings = false;
+
+	if (gRequestSaveVFO || flagSaveVfo)
+		SETTINGS_SaveVfoIndices();
+	gRequestSaveVFO = false;
+	flagSaveVfo = false;
+
+	uint8_t saveChannelMode = gRequestSaveChannel;
+	if (flagSaveChannel > saveChannelMode)
+		saveChannelMode = flagSaveChannel;
+	if (saveChannelMode > 0)
+		SETTINGS_SaveChannel(gTxVfo->CHANNEL_SAVE, gEeprom.TX_VFO, gTxVfo, saveChannelMode);
+	gRequestSaveChannel = 0;
+	flagSaveChannel = false;
+
+#ifdef ENABLE_FMRADIO
+	if (gRequestSaveFM || gFlagSaveFM)
+		SETTINGS_SaveFM();
+	gRequestSaveFM = false;
+	gFlagSaveFM = false;
+#endif
+}
+#endif
+
 
 void (*ProcessKeysFunctions[])(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld) = {
 	[DISPLAY_MAIN] = &MAIN_ProcessKeys,
@@ -89,6 +119,10 @@ void (*ProcessKeysFunctions[])(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld) 
 
 #ifdef ENABLE_FMRADIO
 	[DISPLAY_FM] = &FM_ProcessKeys,
+#endif
+
+#ifdef ENABLE_AIS
+	[DISPLAY_AIS] = &AIS_ProcessKeys,
 #endif
 
 #ifdef ENABLE_AIRCOPY
@@ -1262,6 +1296,9 @@ void cancelUserInputModes(void)
 void APP_TimeSlice500ms(void)
 {
 	gNextTimeslice_500ms = false;
+#ifdef ENABLE_AIS
+	AIS_TimeSlice500ms();
+#endif
 	bool exit_menu = false;
 
 	// Skipped authentic device check
@@ -1384,7 +1421,11 @@ void APP_TimeSlice500ms(void)
 #endif
 	) {
 		if (gEeprom.AUTO_KEYPAD_LOCK && gKeyLockCountdown > 0 && !gDTMF_InputMode
-			&& gScreenToDisplay != DISPLAY_MENU && --gKeyLockCountdown == 0)
+			&& gScreenToDisplay != DISPLAY_MENU
+#ifdef ENABLE_AIS
+			&& gScreenToDisplay != DISPLAY_AIS
+#endif
+			&& --gKeyLockCountdown == 0)
 		{
 			gEeprom.KEY_LOCK = true;     // lock the keyboard
 			gUpdateStatus = true;            // lock symbol needs showing
@@ -1531,30 +1572,42 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 		gKeyLockCountdown = 30;     // 15 seconds
 
 	if (!bKeyPressed) { // key released
-		if (flagSaveVfo) {
-			SETTINGS_SaveVfoIndices();
+#ifdef ENABLE_AIS
+		if (gAisMode) {
 			flagSaveVfo = false;
-		}
-
-		if (flagSaveSettings) {
-			SETTINGS_SaveSettings();
 			flagSaveSettings = false;
-		}
+			flagSaveChannel = false;
+#ifdef ENABLE_FMRADIO
+			gFlagSaveFM = false;
+#endif
+		} else
+#endif
+		{
+			if (flagSaveVfo) {
+				SETTINGS_SaveVfoIndices();
+				flagSaveVfo = false;
+			}
+
+			if (flagSaveSettings) {
+				SETTINGS_SaveSettings();
+				flagSaveSettings = false;
+			}
 
 #ifdef ENABLE_FMRADIO
-		if (gFlagSaveFM) {
-			SETTINGS_SaveFM();
-			gFlagSaveFM = false;
-		}
+			if (gFlagSaveFM) {
+				SETTINGS_SaveFM();
+				gFlagSaveFM = false;
+			}
 #endif
 
-		if (flagSaveChannel) {
-			SETTINGS_SaveChannel(gTxVfo->CHANNEL_SAVE, gEeprom.TX_VFO, gTxVfo, flagSaveChannel);
-			flagSaveChannel = false;
+			if (flagSaveChannel) {
+				SETTINGS_SaveChannel(gTxVfo->CHANNEL_SAVE, gEeprom.TX_VFO, gTxVfo, flagSaveChannel);
+				flagSaveChannel = false;
 
-			if (!SCANNER_IsScanning() && gVfoConfigureMode == VFO_CONFIGURE_NONE)
-				// gVfoConfigureMode is so as we don't wipe out previously setting this variable elsewhere
-				gVfoConfigureMode = VFO_CONFIGURE;
+				if (!SCANNER_IsScanning() && gVfoConfigureMode == VFO_CONFIGURE_NONE)
+					// gVfoConfigureMode is so as we don't wipe out previously setting this variable elsewhere
+					gVfoConfigureMode = VFO_CONFIGURE;
+			}
 		}
 	}
 	else { // key pressed or held
@@ -1602,27 +1655,6 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 		}
 #endif
 	}
-
-#ifdef ENABLE_AIS_LAB
-	if (AISLAB_IsActive())
-	{
-		AISLAB_ProcessKey(Key, bKeyPressed, bKeyHeld);
-		if (gBeepToPlay != BEEP_NONE)
-		{
-			AUDIO_PlayBeep(gBeepToPlay);
-			gBeepToPlay = BEEP_NONE;
-		}
-		return;
-	}
-
-	// Saved experimental register overrides are receive-only by default.
-	if (AISLAB_IsRxGuardEnabled() && Key == KEY_PTT)
-	{
-		if (!bKeyHeld && bKeyPressed)
-			AUDIO_PlayBeep(BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL);
-		return;
-	}
-#endif
 
 	bool lowBatPopup = gLowBattery && !gLowBatteryConfirmed &&  gScreenToDisplay == DISPLAY_MAIN;
 
@@ -1698,6 +1730,13 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 		gWasFKeyPressed = false;
 		gUpdateStatus   = true;
 	}
+
+#ifdef ENABLE_AIS
+	if (gScreenToDisplay == DISPLAY_AIS && gCurrentFunction != FUNCTION_TRANSMIT) {
+		AIS_ProcessKeys(Key, bKeyPressed, bKeyHeld);
+		goto Skip;
+	}
+#endif
 
 	if (bFlag) {
 		goto Skip;
@@ -1784,6 +1823,20 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 	}
 
 Skip:
+#ifdef ENABLE_AIS
+	if (gAisMode) {
+		gRequestSaveSettings = false;
+		gRequestSaveVFO = false;
+		gRequestSaveChannel = 0;
+		flagSaveSettings = false;
+		flagSaveVfo = false;
+		flagSaveChannel = false;
+#ifdef ENABLE_FMRADIO
+		gRequestSaveFM = false;
+		gFlagSaveFM = false;
+#endif
+	}
+#endif
 	if (gBeepToPlay != BEEP_NONE) {
 		AUDIO_PlayBeep(gBeepToPlay);
 		gBeepToPlay = BEEP_NONE;

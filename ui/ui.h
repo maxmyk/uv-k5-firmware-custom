@@ -30,6 +30,10 @@ enum GUI_DisplayType_t
 	DISPLAY_FM,
 #endif
 
+#ifdef ENABLE_AIS
+	DISPLAY_AIS,
+#endif
+
 #ifdef ENABLE_AIRCOPY
 	DISPLAY_AIRCOPY,
 #endif

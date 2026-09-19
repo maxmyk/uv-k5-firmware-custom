@@ -17,6 +17,9 @@
 #include <string.h>
 
 #include "app/dtmf.h"
+#ifdef ENABLE_AIS
+	#include "app/ais.h"
+#endif
 #ifdef ENABLE_FMRADIO
 	#include "app/fm.h"
 #endif
@@ -377,10 +380,6 @@ void SETTINGS_FactoryReset(bool bIsAll)
 {
 	uint16_t i;
 	uint8_t  Template[8];
-#ifdef ENABLE_AIS_LAB
-	const uint16_t AISLAB_EEPROM_BASE = 0x1C00u;
-	const uint16_t AISLAB_EEPROM_END  = 0x1C70u;
-#endif
 
 	memset(Template, 0xFF, sizeof(Template));
 
@@ -405,14 +404,6 @@ void SETTINGS_FactoryReset(bool bIsAll)
 			EEPROM_WriteBuffer(i, Template);
 		}
 	}
-
-#ifdef ENABLE_AIS_LAB
-	if (bIsAll)
-	{
-		for (i = AISLAB_EEPROM_BASE; i < AISLAB_EEPROM_END; i += 8)
-			EEPROM_WriteBuffer(i, Template);
-	}
-#endif
 
 	if (bIsAll)
 	{
@@ -459,6 +450,10 @@ void SETTINGS_SaveFM(void)
 
 void SETTINGS_SaveVfoIndices(void)
 {
+#ifdef ENABLE_AIS
+	if (gAisMode)
+		return;
+#endif
 	uint8_t State[8];
 
 	#ifndef ENABLE_NOAA
@@ -481,6 +476,10 @@ void SETTINGS_SaveVfoIndices(void)
 
 void SETTINGS_SaveSettings(void)
 {
+#ifdef ENABLE_AIS
+	if (gAisMode)
+		return;
+#endif
 	uint8_t  State[8];
 	uint32_t Password[2];
 
@@ -608,6 +607,10 @@ void SETTINGS_SaveSettings(void)
 
 void SETTINGS_SaveChannel(uint8_t Channel, uint8_t VFO, const VFO_Info_t *pVFO, uint8_t Mode)
 {
+#ifdef ENABLE_AIS
+	if (gAisMode)
+		return;
+#endif
 #ifdef ENABLE_NOAA
 	if (IS_NOAA_CHANNEL(Channel))
 		return;

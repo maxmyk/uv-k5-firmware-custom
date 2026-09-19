@@ -1,4 +1,83 @@
-# Open re-implementation of the Quansheng UV-K5/K6/5R v2.1.27 firmware - AIS DIG build test
+# Open re-implementation of the Quansheng UV-K5/K6/5R v2.1.27 firmware - AIS build
+
+Built on top of the [DIG](https://github.com/mobilinkd/uv-k5-firmware-custom) mode.
+
+# AIS receive mode
+|Setup on Android (Radio + Adapters + Decoder App + OpenCPN)|This solution vs AIS-Catcher|Cross-checking with the AIS system on a vessel.
+|---|---|---|
+|![Setup on Android (Radio + Adapters + Decoder App + OpenCPN)](images/setup-1.png)|![UV-K6 based receiver vs AIS-catcher](images/android-vs-ais-catcher.png)|![Image of the MERCURY XXI AIS system](images/mercury-xxi-1.png)|
+
+This build adds a dedicated receive-only AIS application using the firmware's
+existing DIG/WIDE BK4819 configuration.
+
+## Controls
+
+Assign `AIS` to any configurable key action in the menu. IMHO `M Long` is the most
+convenient choice.
+
+While AIS mode is open:
+
+- `UP` / `DOWN`: toggle immediately between AIS 1 / marine 87B (161.975 MHz) and AIS 2 / marine 88B (162.025 MHz); this also restarts the auto-switch timer
+- `MENU`: cycle auto switching through `OFF / 15 / 30 / 60 / 90 / 120` seconds
+- `EXIT`: restore the previous VFO/settings and return to the main screen
+- `PTT`: blocked
+- all other keys/side actions: blocked
+
+The last selected AIS channel and auto-switch interval are remembered in RAM until power-off. Auto switching defaults to OFF after a reboot.
+
+AIS mode temporarily turns off dual watch and cross-band, selects DIG/WIDE, keeps the receive audio open continuously, and restores the user's VFO state on exit.
+
+## Story
+
+### Digital signal processing
+
+The radio's audio output is processed by unreleased (yet) AIS decoder applications.
+
+The data from the radio, without any hardware modifications, is not perfectly usable; therefore, multi-hypothesis decoding, fractional phases, adaptive equalization, and limited CRC-based error correction (sanity-checked with heuristics so the vessel doesn't "teleport") are implemented. The probabilistic decoder is currently under development and testing.
+
+The decoder applications run on a variety of platforms, including websites (tested in Chrome): Linux, Windows, macOS, iOS, and Android.
+
+|Linux (Web, Chrome)|MacBook (Web, Chrome)|iOS (Web, Chrome)|Android (Web, Chrome)|
+|---|---|---|---|
+|![Linux (Web, Chrome), initial successful test, 2026-09-05](images/linux-1-web.png)|![MacBook (Web, Chrome)](images/mac-1-web.png)|![iOS (Web, Chrome)](images/ios-1-web.png)|![Android (Web, Chrome), early version](images/android-1-web.png)|
+
+
+Android works best with a dedicated app (not yet released) that integrates with OpenCPN. The app runs in the background, decodes the audio and sends packets (NMEA 0183) via UDP to OpenCPN locally. I've built OpenCPN from source, but there are some caveats - see [this](https://github.com/maxmyk/opencpn-android-5.14-repro-build).
+
+|Android app (standalone)|Android app (standalone), full screen|Android app + OpenCPN integration|
+|---|---|---|
+|![Android app (standalone)](images/android-1.png)|![Android app (standalone), full screen](images/android-2.png)|![Android app + OpenCPN integration](images/android-3.png)
+
+### Hardware connection (radio output as microphone input)
+
+The hardware connection includes a 2.5 mm radio audio output-to-3.5 mm headphone adapter and a 3.5 mm-to-TRRS mic output adapter (see the picture below). I'll post the tested schematic sometime soon. Took me 7 iterations and 3 different designs to get a working one. The PITA was the $10 Apple dongle that refused to recognize the microphone input. One of the designs I tried was [this one](https://github.com/johnboiles/BaofengUV5R-TRRS); it worked with an Apple dongle, but the audio was not usable for decoding. 
+
+![adapter prototype](images/adapter-prototype.png)
+
+Of the 3.5 mm-to-USB-C dongles tested, the $10 Apple one works best on both Apple and Android devices. The $20 dongle from Best Buy processes the audio way too much (it applies heavy voice enhancement and background noise suppression filters, and as a result, it picks up "ghost voices" on the recordings), and I can't recommend it for this application. Laptops with 3.5 mm audio input usually work fine without a dongle.
+
+Waterfall comparison between the two dongles on the same audio input:
+|$10 dongle|$20 dongle|
+|---|---|
+|![$10 dongle](images/waterfall-10.png)|![$20 dongle](images/waterfall-20.png)|
+
+### Current range record
+
+The current record, using a stock antenna and no CRC corrections (confirmed with AIS-Catcher and MarineTraffic), for the reception distance is 41.8 nautical miles (77.5 km ground range). Received data from COASTAL CELEBRATION (MMSI: 316011409) at SWARTZ BAY, BC. The receiver was located in North Vancouver, BC, at the time, ~310 m above sea level.
+
+![Radio path study, https://www.scadacore.com/tools/rf-path/rf-line-of-sight/](images/record-study.png)
+
+### Misc.
+
+Went from initial idea to TRL 6.5 in 3 weekends. More precisely, the project currently sits at TRL 6 overall, with the core AIS decoding technology demonstrated at approximately TRL 7 in an operational environment - tested on multiple people's devices with different hardware and OSes.
+
+The next step is to test a different antenna. I'm thinking of experimenting with [this design](https://www.sailworldcruising.com/news/227075/Build-your-own-inexpensive-VHF-AIS-antenna). The authors used an `SR-161 AIS receiver`, a dedicated AIS receiver operating in single-channel mode. The UV-K5/K6 in AIS mode also works in single-channel mode.
+
+An interesting article to read: [AIS GMSK Modulator – Scicos Simulation](https://jeremyclark.ca/wp/nav/ais-modulator-scicos-simulation/)
+
+P.S. Thanks to the operator of the MERCURY XXI (MMSI: 316058844) for taking a couple of pictures of the on-board AIS.
+
+---
 
 This repository is a merge of [OneOfEleven custom firmware](https://github.com/OneOfEleven/uv-k5-firmware-custom) with [fagci spectrum analizer](https://github.com/fagci/uv-k5-firmware-fagci-mod/tree/refactor) plus my few changes.<br>
 All is a cloned and customized version of DualTachyon's open firmware found [here](https://github.com/DualTachyon/uv-k5-firmware) ... a cool achievement !
@@ -12,16 +91,28 @@ Anyway, have fun.
 
 ## Table of Contents
 
-* [Main Features](#main-features)
-* [Manual](#manual)
-* [Radio Performance](#radio-performance)
-* [User Customization](#user-customization)
-* [Compiler](#compiler)
-* [Building](#building)
-* [Credits](#credits)
-* [Other sources of information](#other-sources-of-information)
-* [License](#license)
-* [Example changes/updates](#example-changesupdates)
+- [Open re-implementation of the Quansheng UV-K5/K6/5R v2.1.27 firmware - AIS build](#open-re-implementation-of-the-quansheng-uv-k5k65r-v2127-firmware---ais-build)
+- [AIS receive mode](#ais-receive-mode)
+  - [Controls](#controls)
+  - [Story](#story)
+    - [Digital signal processing](#digital-signal-processing)
+    - [Hardware connection (radio output as microphone input)](#hardware-connection-radio-output-as-microphone-input)
+    - [Current range record](#current-range-record)
+    - [Misc.](#misc)
+  - [Table of Contents](#table-of-contents)
+  - [Main features:](#main-features)
+  - [Manual](#manual)
+  - [Radio performance](#radio-performance)
+  - [User customization](#user-customization)
+  - [Compiler](#compiler)
+  - [Building](#building)
+    - [Github Codespace build method](#github-codespace-build-method)
+    - [Docker build method](#docker-build-method)
+    - [Windows environment build method](#windows-environment-build-method)
+  - [Credits](#credits)
+  - [Other sources of information](#other-sources-of-information)
+  - [License](#license)
+  - [Example changes/updates](#example-changesupdates)
 
 ## Main features:
 * many of OneOfEleven mods:

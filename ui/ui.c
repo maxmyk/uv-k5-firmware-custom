@@ -30,6 +30,9 @@
 #ifdef ENABLE_FMRADIO
 	#include "ui/fmradio.h"
 #endif
+#ifdef ENABLE_AIS
+	#include "ui/ais.h"
+#endif
 #include "ui/inputbox.h"
 #include "ui/main.h"
 #include "ui/menu.h"
@@ -52,6 +55,10 @@ void (*UI_DisplayFunctions[])(void) = {
 
 #ifdef ENABLE_FMRADIO
 	[DISPLAY_FM] = &UI_DisplayFM,
+#endif
+
+#ifdef ENABLE_AIS
+	[DISPLAY_AIS] = &UI_DisplayAIS,
 #endif
 
 #ifdef ENABLE_AIRCOPY

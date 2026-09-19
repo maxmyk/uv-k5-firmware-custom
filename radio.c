@@ -18,9 +18,6 @@
 #include <string.h>
 
 #include "am_fix.h"
-#ifdef ENABLE_AIS_LAB
-#include "app/ais_lab.h"
-#endif
 #include "app/dtmf.h"
 #ifdef ENABLE_FMRADIO
 	#include "app/fm.h"
@@ -740,10 +737,6 @@ void RADIO_SetupRegisters(bool switchToForeground)
 
 	// enable/disable BK4819 selected interrupts
 	BK4819_WriteRegister(BK4819_REG_3F, InterruptMask);
-
-#ifdef ENABLE_AIS_LAB
-	AISLAB_ApplyOverrides();
-#endif
 
 	FUNCTION_Init();
 

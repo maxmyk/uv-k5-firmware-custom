@@ -18,6 +18,9 @@
 #include <string.h>
 
 #include "app/action.h"
+#ifdef ENABLE_AIS
+	#include "app/ais.h"
+#endif
 #include "app/app.h"
 #include "app/chFrScanner.h"
 #include "app/common.h"
@@ -109,6 +112,12 @@ void (*action_opt_table[])(void) = {
 	[ACTION_OPT_SPECTRUM] = &APP_RunSpectrum,
 #else
 	[ACTION_OPT_SPECTRUM] = &FUNCTION_NOP,
+#endif
+
+#ifdef ENABLE_AIS
+	[ACTION_OPT_AIS] = &AIS_Start,
+#else
+	[ACTION_OPT_AIS] = &FUNCTION_NOP,
 #endif
 };
 
