@@ -75,6 +75,8 @@ The next step is to test a different antenna. I'm thinking of experimenting with
 
 An interesting article to read: [AIS GMSK Modulator – Scicos Simulation](https://jeremyclark.ca/wp/nav/ais-modulator-scicos-simulation/)
 
+Link to flash: https://egzumer.github.io/uvtools/?firmwareURL=https://github.com/maxmyk/uv-k5-firmware-custom/releases/download/v0.4.0-alpha/firmware-v0.4.0-alpha.packed.bin
+
 P.S. Thanks to the operator of the MERCURY XXI (MMSI: 316058844) for taking a couple of pictures of the on-board AIS.
 
 ---
